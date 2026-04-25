@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌿 情绪能量追踪</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <style>
+        /* ===== CSS Variables & Reset ===== */
+        :root {
+            --bg-primary: #FFF8F0;
+            --bg-secondary: #FFF1E6;
+            --bg-card: #FFFFFF;
+            --text-primary: #4A3728;
+            --text-secondary: #8B7355;
+            --text-light: #B8A08A;
+            --accent-warm: #E8927C;
+            --accent-coral: #FF8A80;
+            --accent-gold: #FFD54F;
+            --accent-green: #A8D5BA;
+            --accent-blue: #90CAF9;
+            --accent-purple: #CE93D8;
+            --border-soft: #F0E0D0;
+            --shadow-soft: 0 4px 20px rgba(74, 55, 40, 0.06);
+            --shadow-hover: 0 8px 30px rgba(74, 55, 40, 0.1);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* ===== Background Decoration ===== */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            right: -30%;
+            width: 80vw;
+            height: 80vw;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(232, 146, 124, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -40%;
+            left: -20%;
+            width: 60vw;
+            height: 60vw;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(168, 213, 186, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ===== Layout ===== */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px 20px 60px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ===== Header ===== */
+        .header {
+            text-align: center;
+            padding: 40px 0 30px;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        /* ===== Cards ===== */
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 28px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border-soft);
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-hover);
+        }
+
+        .card-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title .icon {
+            font-size: 1.3rem;
+        }
+
+        /* ===== Date Picker ===== */
+        .date-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .date-row label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .date-row input[type="date"] {
+            flex: 1;
+            padding: 10px 14px;
+            border: 2px solid var(--border-soft);
+            border-radius: var(--radius-sm);
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            background: var(--bg-secondary);
+            outline: none;
+            transition: var(--transition);
+            font-family: inherit;
+        }
+
+        .date-row input[type="date"]:focus {
+            border-color: var(--accent-warm);
+        }
+
+        /* ===== Emotion Tags ===== */
+        .emotion-section {
+            margin-bottom: 20px;
+        }
+
+        .emotion-section label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .emotion-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .emotion-tag {
+            padding: 8px 16px;
+            border: 2px solid var(--border-soft);
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            user-select: none;
+        }
+
+        .emotion-tag:hover {
+            border-color: var(--accent-warm);
+            color: var(--accent-warm);
+        }
+
+        .emotion-tag.active {
+            background: var(--accent-warm);
+            border-color: var(--accent-warm);
+            color: white;
+        }
+
+        .emotion-tag .emoji {
+            margin-right: 4px;
+        }
+
+        /* ===== Energy Slider ===== */
+        .energy-section {
+            margin-bottom: 20px;
+        }
+
+        .energy-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .energy-header label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .energy-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--accent-warm);
+        }
+
+        .energy-slider {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(to right, var(--accent-coral), var(--accent-gold), var(--accent-green));
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .energy-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid var(--accent-warm);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: var(--transition);
+        }
+
+        .energy-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        .energy-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 6px;
+            font-size: 0.75rem;
+            color: var(--text-light);
+        }
+
+        /* ===== Note Input ===== */
+        .note-section {
+            margin-bottom: 24px;
+        }
+
+        .note-section label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .note-input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid var(--border-soft);
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            background: var(--bg-secondary);
+            outline: none;
+            resize: vertical;
+            min-height: 70px;
+            max-height: 150px;
+            font-family: inherit;
+            transition: var(--transition);
+        }
+
+        .note-input:focus {
+            border-color: var(--accent-warm);
+        }
+
+        .note-input::placeholder {
+            color: var(--text-light);
+        }
+
+        /* ===== Buttons ===== */
+        .btn-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-warm), var(--accent-coral));
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(232, 146, 124, 0.35);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border: 2px solid var(--border-soft);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent-warm);
+            color: var(--accent-warm);
+        }
+
+        /* ===== Tabs ===== */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+            padding: 4px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            background: transparent;
+            color: var(--text-secondary);
+            font-family: inherit;
+        }
+
+        .tab.active {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .tab:hover:not(.active) {
+            color: var(--accent-warm);
+        }
+
+        /* ===== Chart Area ===== */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 10px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ===== Report ===== */
+        .report-section {
+            margin-top: 8px;
+        }
+
+        .report-item {
+            padding: 16px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+            margin-bottom: 12px;
+        }
+
+        .report-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .report-label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .report-value {
+            font-size: 1rem;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .report-highlight {
+            font-weight: 600;
+            color: var(--accent-warm);
+        }
+
+        .report-bar {
+            height: 8px;
+            border-radius: 4px;
+            background: var(--border-soft);
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .report-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ===== History Table ===== */
+        .history-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-soft);
+            gap: 12px;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-date {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            min-width: 90px;
+        }
+
+        .history-emotions {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+
+        .history-emotion-badge {
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+        }
+
+        .history-energy {
+            font-size: 0.85rem;
+            font-weight: 600;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        .history-delete {
+            padding: 4px 8px;
+            border: none;
+            background: none;
+            color: var(--text-light);
+            cursor: pointer;
+            font-size: 1rem;
+            border-radius: 6px;
+            transition: var(--transition);
+        }
+
+        .history-delete:hover {
+            background: rgba(255, 138, 128, 0.1);
+            color: var(--accent-coral);
+        }
+
+        /* ===== Empty State ===== */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+        }
+
+        .empty-state .icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
+
+        .empty-state p {
+            font-size: 0.95rem;
+        }
+
+        /* ===== Toast ===== */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--text-primary);
+            color: white;
+            padding: 12px 24px;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* ===== Time Range Selector ===== */
+        .time-range {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 16px;
+        }
+
+        .time-btn {
+            padding: 6px 14px;
+            border: 2px solid var(--border-soft);
+            border-radius: 16px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: var(--transition);
+            background: transparent;
+            color: var(--text-secondary);
+            font-family: inherit;
+        }
+
+        .time-btn.active {
+            background: var(--accent-warm);
+            border-color: var(--accent-warm);
+            color: white;
+        }
+
+        .time-btn:hover:not(.active) {
+            border-color: var(--accent-warm);
+            color: var(--accent-warm);
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px 16px 40px;
+            }
+
+            .header h1 {
+                font-size: 1.7rem;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .btn-row {
+                flex-direction: column;
+            }
+
+            .chart-container {
+                height: 250px;
+            }
+        }
+
+        /* ===== Animations ===== */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card {
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        .card:nth-child(2) { animation-delay: 0.1s; }
+        .card:nth-child(3) { animation-delay: 0.2s; }
+        .card:nth-child(4) { animation-delay: 0.3s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🌿 情绪能量追踪</h1>
+            <p>记录每一天的心情，发现内心的节奏</p>
+        </div>
+
+        <!-- Input Card -->
+        <div class="card">
+            <div class="card-title"><span class="icon">📝</span> 记录今天</div>
+
+            <!-- Date -->
+            <div class="date-row">
+                <label>📅 日期</label>
+                <input type="date" id="inputDate">
+            </div>
+
+            <!-- Emotion Tags -->
+            <div class="emotion-section">
+                <label>💭 今日情绪（可多选）</label>
+                <div class="emotion-tags" id="emotionTags">
+                    <span class="emotion-tag" data-emotion="开心">😊 开心</span>
+                    <span class="emotion-tag" data-emotion="平静">😌 平静</span>
+                    <span class="emotion-tag" data-emotion="感恩">🥰 感恩</span>
+                    <span class="emotion-tag" data-emotion="兴奋">🤩 兴奋</span>
+                    <span class="emotion-tag" data-emotion="自信">💪 自信</span>
+                    <span class="emotion-tag" data-emotion="焦虑">😰 焦虑</span>
+                    <span class="emotion-tag" data-emotion="疲惫">😴 疲惫</span>
+                    <span class="emotion-tag" data-emotion="低落">😢 低落</span>
+                    <span class="emotion-tag" data-emotion="愤怒">😤 愤怒</span>
+                    <span class="emotion-tag" data-emotion="迷茫">🌫️ 迷茫</span>
+                </div>
+            </div>
+
+            <!-- Energy Slider -->
+            <div class="energy-section">
+                <div class="energy-header">
+                    <label>⚡ 能量值</label>
+                    <span class="energy-value" id="energyDisplay">5</span>
+                </div>
+                <input type="range" class="energy-slider" id="energySlider" min="1" max="10" value="5">
+                <div class="energy-labels">
+                    <span>1 低电量</span>
+                    <span>5 一般</span>
+                    <span>10 满格</span>
+                </div>
+            </div>
+
+            <!-- Note -->
+            <div class="note-section">
+                <label>✏️ 补充描述（可选）</label>
+                <textarea class="note-input" id="noteInput" placeholder="今天发生了什么让你有这样的感受？"></textarea>
+            </div>
+
+            <!-- Buttons -->
+            <div class="btn-row">
+                <button class="btn btn-primary" id="saveBtn">💾 保存记录</button>
+                <button class="btn btn-secondary" id="clearBtn">清空</button>
+            </div>
+        </div>
+
+        <!-- Chart Card -->
+        <div class="card">
+            <div class="card-title"><span class="icon">📊</span> 趋势图表</div>
+
+            <div class="time-range" id="timeRange">
+                <button class="time-btn active" data-days="7">近7天</button>
+                <button class="time-btn" data-days="14">近14天</button>
+                <button class="time-btn" data-days="30">近30天</button>
+                <button class="time-btn" data-days="0">全部</button>
+            </div>
+
+            <div class="tabs">
+                <button class="tab active" data-tab="energy">⚡ 能量趋势</button>
+                <button class="tab" data-tab="emotion">💭 情绪分布</button>
+            </div>
+
+            <div class="tab-content active" id="tab-energy">
+                <div class="chart-container">
+                    <canvas id="energyChart"></canvas>
+                </div>
+            </div>
+
+            <div class="tab-content" id="tab-emotion">
+                <div class="chart-container">
+                    <canvas id="emotionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Card -->
+        <div class="card">
+            <div class="card-title"><span class="icon">📋</span> 心理分析报告</div>
+            <div id="reportContent">
+                <div class="empty-state">
+                    <div class="icon">🌱</div>
+                    <p>记录至少3天的数据后，将为你生成分析报告</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Card -->
+        <div class="card">
+            <div class="card-title"><span class="icon">📅</span> 历史记录</div>
+            <div id="historyContent">
+                <div class="empty-state">
+                    <div class="icon">📭</div>
+                    <p>还没有记录，开始记录你的第一天吧</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ===== Data Management =====
+        const STORAGE_KEY = 'mood_energy_tracker';
+
+        function getRecords() {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            } catch {
+                return [];
+            }
+        }
+
+        function saveRecords(records) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+        }
+
+        function addRecord(record) {
+            const records = getRecords();
+            // Check if date already exists, update it
+            const existingIdx = records.findIndex(r => r.date === record.date);
+            if (existingIdx >= 0) {
+                records[existingIdx] = record;
+            } else {
+                records.push(record);
+            }
+            records.sort((a, b) => a.date.localeCompare(b.date));
+            saveRecords(records);
+        }
+
+        function deleteRecord(date) {
+            const records = getRecords().filter(r => r.date !== date);
+            saveRecords(records);
+        }
+
+        // ===== Emotion Score Mapping =====
+        const emotionScores = {
+            '开心': 9, '平静': 7, '感恩': 9, '兴奋': 10, '自信': 8,
+            '焦虑': 3, '疲惫': 2, '低落': 2, '愤怒': 2, '迷茫': 4
+        };
+
+        const emotionColors = {
+            '开心': '#FFD54F', '平静': '#A8D5BA', '感恩': '#FF8A80',
+            '兴奋': '#CE93D8', '自信': '#90CAF9', '焦虑': '#FFAB91',
+            '疲惫': '#B0BEC5', '低落': '#90A4AE', '愤怒': '#EF9A9A', '迷茫': '#BCAAA4'
+        };
+
+        function getAverageEmotionScore(emotions) {
+            if (!emotions || emotions.length === 0) return 5;
+            return emotions.reduce((sum, e) => sum + (emotionScores[e] || 5), 0) / emotions.length;
+        }
+
+        // ===== UI Elements =====
+        const inputDate = document.getElementById('inputDate');
+        const emotionTags = document.getElementById('emotionTags');
+        const energySlider = document.getElementById('energySlider');
+        const energyDisplay = document.getElementById('energyDisplay');
+        const noteInput = document.getElementById('noteInput');
+        const saveBtn = document.getElementById('saveBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const toast = document.getElementById('toast');
+
+        // Set default date to today
+        const today = new Date();
+        inputDate.value = today.toISOString().split('T')[0];
+
+        // Emotion tag selection
+        let selectedEmotions = [];
+        emotionTags.addEventListener('click', (e) => {
+            const tag = e.target.closest('.emotion-tag');
+            if (!tag) return;
+            const emotion = tag.dataset.emotion;
+            if (selectedEmotions.includes(emotion)) {
+                selectedEmotions = selectedEmotions.filter(e => e !== emotion);
+                tag.classList.remove('active');
+            } else {
+                selectedEmotions.push(emotion);
+                tag.classList.add('active');
+            }
+        });
+
+        // Energy slider
+        energySlider.addEventListener('input', () => {
+            energyDisplay.textContent = energySlider.value;
+        });
+
+        // Clear form
+        clearBtn.addEventListener('click', () => {
+            inputDate.value = today.toISOString().split('T')[0];
+            selectedEmotions = [];
+            document.querySelectorAll('.emotion-tag').forEach(t => t.classList.remove('active'));
+            energySlider.value = 5;
+            energyDisplay.textContent = '5';
+            noteInput.value = '';
+        });
+
+        // Save record
+        saveBtn.addEventListener('click', () => {
+            const date = inputDate.value;
+            if (!date) {
+                showToast('请选择日期');
+                return;
+            }
+            if (selectedEmotions.length === 0) {
+                showToast('请至少选择一个情绪');
+                return;
+            }
+
+            const record = {
+                date,
+                emotions: [...selectedEmotions],
+                energy: parseInt(energySlider.value),
+                note: noteInput.value.trim(),
+                emotionScore: getAverageEmotionScore(selectedEmotions),
+                timestamp: Date.now()
+            };
+
+            addRecord(record);
+            showToast('✅ 记录保存成功！');
+
+            // Clear form for next entry
+            clearBtn.click();
+
+            // Refresh all views
+            refreshAll();
+        });
+
+        // Toast
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        // ===== Charts =====
+        let energyChart = null;
+        let emotionChart = null;
+        let currentDays = 7;
+
+        // Time range buttons
+        document.getElementById('timeRange').addEventListener('click', (e) => {
+            const btn = e.target.closest('.time-btn');
+            if (!btn) return;
+            document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentDays = parseInt(btn.dataset.days);
+            refreshCharts();
+        });
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
+            });
+        });
+
+        function getFilteredRecords() {
+            const records = getRecords();
+            if (currentDays === 0) return records;
+            const cutoff = new Date();
+            cutoff.setDate(cutoff.getDate() - currentDays);
+            const cutoffStr = cutoff.toISOString().split('T')[0];
+            return records.filter(r => r.date >= cutoffStr);
+        }
+
+        function refreshCharts() {
+            const records = getFilteredRecords();
+
+            // Energy Chart
+            const energyCtx = document.getElementById('energyChart').getContext('2d');
+            if (energyChart) energyChart.destroy();
+
+            if (records.length === 0) {
+                energyChart = new Chart(energyCtx, {
+                    type: 'line',
+                    data: { labels: ['暂无数据'], datasets: [{ data: [0] }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                });
+            } else {
+                const labels = records.map(r => {
+                    const d = new Date(r.date);
+                    return `${d.getMonth()+1}/${d.getDate()}`;
+                });
+                const energyData = records.map(r => r.energy);
+                const emotionData = records.map(r => r.emotionScore);
+
+                energyChart = new Chart(energyCtx, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: '能量值',
+                                data: energyData,
+                                borderColor: '#E8927C',
+                                backgroundColor: 'rgba(232, 146, 124, 0.1)',
+                                fill: true,
+                                tension: 0.4,
+                                pointBackgroundColor: '#E8927C',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                pointRadius: 5,
+                                pointHoverRadius: 7,
+                            },
+                            {
+                                label: '情绪指数',
+                                data: emotionData,
+                                borderColor: '#A8D5BA',
+                                backgroundColor: 'rgba(168, 213, 186, 0.1)',
+                                fill: true,
+                                tension: 0.4,
+                                pointBackgroundColor: '#A8D5BA',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                pointRadius: 5,
+                                pointHoverRadius: 7,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { intersect: false, mode: 'index' },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: { usePointStyle: true, padding: 20, font: { size: 13 } }
+                            },
+                            tooltip: {
+                                backgroundColor: '#4A3728',
+                                titleFont: { size: 13 },
+                                bodyFont: { size: 12 },
+                                padding: 12,
+                                cornerRadius: 10,
+                            }
+                        },
+                        scales: {
+                            y: {
+                                min: 0, max: 10,
+                                grid: { color: 'rgba(0,0,0,0.04)' },
+                                ticks: { font: { size: 12 }, color: '#8B7355' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { font: { size: 12 }, color: '#8B7355' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Emotion Distribution Chart
+            const emotionCtx = document.getElementById('emotionChart').getContext('2d');
+            if (emotionChart) emotionChart.destroy();
+
+            if (records.length === 0) {
+                emotionChart = new Chart(emotionCtx, {
+                    type: 'doughnut',
+                    data: { labels: ['暂无数据'], datasets: [{ data: [1], backgroundColor: ['#F0E0D0'] }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                });
+            } else {
+                const emotionCounts = {};
+                records.forEach(r => {
+                    r.emotions.forEach(e => {
+                        emotionCounts[e] = (emotionCounts[e] || 0) + 1;
+                    });
+                });
+
+                const sortedEmotions = Object.entries(emotionCounts).sort((a, b) => b[1] - a[1]);
+                const eLabels = sortedEmotions.map(([name]) => name);
+                const eData = sortedEmotions.map(([, count]) => count);
+                const eColors = eLabels.map(name => emotionColors[name] || '#B0BEC5');
+
+                emotionChart = new Chart(emotionCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: eLabels,
+                        datasets: [{
+                            data: eData,
+                            backgroundColor: eColors,
+                            borderWidth: 3,
+                            borderColor: '#FFFFFF',
+                            hoverOffset: 8,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '55%',
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: { usePointStyle: true, padding: 14, font: { size: 13 } }
+                            },
+                            tooltip: {
+                                backgroundColor: '#4A3728',
+                                padding: 12,
+                                cornerRadius: 10,
+                                callbacks: {
+                                    label: (ctx) => ` ${ctx.label}: ${ctx.raw}次`
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // ===== Report Generation =====
+        function generateReport() {
+            const records = getRecords();
+            const reportEl = document.getElementById('reportContent');
+
+            if (records.length < 3) {
+                reportEl.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🌱</div>
+                        <p>记录至少3天的数据后，将为你生成分析报告</p>
+                    </div>`;
+                return;
+            }
+
+            // Basic statistics
+            const avgEnergy = (records.reduce((s, r) => s + r.energy, 0) / records.length).toFixed(1);
+            const avgEmotion = (records.reduce((s, r) => s + r.emotionScore, 0) / records.length).toFixed(1);
+            const maxEnergy = Math.max(...records.map(r => r.energy));
+            const minEnergy = Math.min(...records.map(r => r.energy));
+            const maxEmotion = Math.max(...records.map(r => r.emotionScore));
+            const minEmotion = Math.min(...records.map(r => r.emotionScore));
+
+            // Most frequent emotion
+            const emotionCounts = {};
+            records.forEach(r => r.emotions.forEach(e => { emotionCounts[e] = (emotionCounts[e] || 0) + 1; }));
+            const topEmotion = Object.entries(emotionCounts).sort((a, b) => b[1] - a[1])[0];
+
+            // Trend analysis (last 7 records vs previous)
+            const recentRecords = records.slice(-7);
+            const olderRecords = records.slice(0, -7);
+            let trendText = '';
+            let trendIcon = '';
+
+            if (recentRecords.length >= 2) {
+                const recentAvgEnergy = recentRecords.reduce((s, r) => s + r.energy, 0) / recentRecords.length;
+                const recentAvgEmotion = recentRecords.reduce((s, r) => s + r.emotionScore, 0) / recentRecords.length;
+
+                if (olderRecords.length > 0) {
+                    const olderAvgEnergy = olderRecords.reduce((s, r) => s + r.energy, 0) / olderRecords.length;
+                    const olderAvgEmotion = olderRecords.reduce((s, r) => s + r.emotionScore, 0) / olderRecords.length;
+
+                    const energyDiff = recentAvgEnergy - olderAvgEnergy;
+                    const emotionDiff = recentAvgEmotion - olderAvgEmotion;
+
+                    if (energyDiff > 0.5 && emotionDiff > 0.5) {
+                        trendText = `近期整体状态呈上升趋势 📈，能量值提升了${energyDiff.toFixed(1)}，情绪指数提升了${emotionDiff.toFixed(1)}。继续保持当前的生活节奏！`;
+                        trendIcon = '📈';
+                    } else if (energyDiff < -0.5 && emotionDiff < -0.5) {
+                        trendText = `近期状态有所波动 📉，能量值下降了${Math.abs(energyDiff).toFixed(1)}，情绪指数下降了${Math.abs(emotionDiff).toFixed(1)}。建议适当休息，关注自我需求。`;
+                        trendIcon = '📉';
+                    } else {
+                        trendText = `近期状态整体平稳 ➡️，能量和情绪保持在相对稳定的水平。稳定也是一种力量。`;
+                        trendIcon = '➡️';
+                    }
+                } else {
+                    trendText = `数据积累中，目前共记录了${records.length}天。持续记录可以帮助你更好地了解自己的情绪模式。`;
+                    trendIcon = '📝';
+                }
+            }
+
+            // Energy level description
+            let energyDesc = '';
+            if (avgEnergy >= 7) {
+                energyDesc = '你的平均能量值较高，说明你近期精力充沛，生活状态良好。';
+            } else if (avgEnergy >= 4) {
+                energyDesc = '你的能量值处于中等水平，注意合理安排休息和活动，避免过度消耗。';
+            } else {
+                energyDesc = '你的能量值偏低，建议关注睡眠质量、饮食规律，并给自己更多恢复时间。';
+            }
+
+            // Emotion level description
+            let emotionDesc = '';
+            if (avgEmotion >= 7) {
+                emotionDesc = '你的整体情绪状态积极正面，这是一个很好的信号。';
+            } else if (avgEmotion >= 4) {
+                emotionDesc = '你的情绪有起伏，这是正常的。尝试找到让你感到平静和快乐的事物。';
+            } else {
+                emotionDesc = '你近期可能面临一些压力。记住，寻求帮助是勇敢的表现。';
+            }
+
+            // Volatility
+            const energyStdDev = Math.sqrt(records.reduce((s, r) => s + Math.pow(r.energy - avgEnergy, 2), 0) / records.length).toFixed(1);
+            let volatilityDesc = '';
+            if (energyStdDev < 1.5) {
+                volatilityDesc = '你的能量波动较小，状态比较稳定。';
+            } else if (energyStdDev < 2.5) {
+                volatilityDesc = '你的能量有一定波动，这在日常生活中是正常的。';
+            } else {
+                volatilityDesc = '你的能量波动较大，建议关注影响能量的因素，建立更稳定的作息。';
+            }
+
+            reportEl.innerHTML = `
+                <div class="report-section">
+                    <div class="report-item">
+                        <div class="report-label">📊 总览（共${records.length}天记录）</div>
+                        <div class="report-value">
+                            平均能量 <span class="report-highlight">${avgEnergy}</span> / 10 &nbsp;|&nbsp;
+                            平均情绪 <span class="report-highlight">${avgEmotion}</span> / 10 &nbsp;|&nbsp;
+                            最常出现情绪 <span class="report-highlight">${topEmotion[0]}</span>（${topEmotion[1]}次）
+                        </div>
+                    </div>
+
+                    <div class="report-item">
+                        <div class="report-label">⚡ 能量分析</div>
+                        <div class="report-value">${energyDesc}</div>
+                        <div class="report-value" style="margin-top:4px;">
+                            能量范围：${minEnergy} ~ ${maxEnergy} &nbsp;|&nbsp; 波动度：${energyStdDev}
+                        </div>
+                        <div class="report-bar">
+                            <div class="report-bar-fill" style="width:${avgEnergy * 10}%; background: linear-gradient(90deg, #FFD54F, #A8D5BA);"></div>
+                        </div>
+                    </div>
+
+                    <div class="report-item">
+                        <div class="report-label">💭 情绪分析</div>
+                        <div class="report-value">${emotionDesc}</div>
+                        <div class="report-value" style="margin-top:4px;">
+                            情绪范围：${minEmotion.toFixed(1)} ~ ${maxEmotion.toFixed(1)}
+                        </div>
+                        <div class="report-bar">
+                            <div class="report-bar-fill" style="width:${avgEmotion * 10}%; background: linear-gradient(90deg, #CE93D8, #90CAF9);"></div>
+                        </div>
+                    </div>
+
+                    <div class="report-item">
+                        <div class="report-label">${trendIcon} 趋势洞察</div>
+                        <div class="report-value">${trendText}</div>
+                    </div>
+
+                    <div class="report-item">
+                        <div class="report-label">💡 稳定性评估</div>
+                        <div class="report-value">${volatilityDesc}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ===== History List =====
+        function refreshHistory() {
+            const records = getRecords();
+            const historyEl = document.getElementById('historyContent');
+
+            if (records.length === 0) {
+                historyEl.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📭</div>
+                        <p>还没有记录，开始记录你的第一天吧</p>
+                    </div>`;
+                return;
+            }
+
+            const reversed = [...records].reverse();
+            historyEl.innerHTML = `<div class="history-list">
+                ${reversed.map(r => {
+                    const d = new Date(r.date);
+                    const dateStr = `${d.getMonth()+1}月${d.getDate()}日`;
+                    const energyColor = r.energy >= 7 ? '#A8D5BA' : r.energy >= 4 ? '#FFD54F' : '#FF8A80';
+                    return `
+                        <div class="history-item">
+                            <span class="history-date">${dateStr}</span>
+                            <div class="history-emotions">
+                                ${r.emotions.map(e => `<span class="history-emotion-badge">${e}</span>`).join('')}
+                            </div>
+                            <span class="history-energy" style="color:${energyColor}">⚡${r.energy}</span>
+                            <button class="history-delete" data-date="${r.date}" title="删除">✕</button>
+                        </div>
+                    `;
+                }).join('')}
+            </div>`;
+
+            // Delete buttons
+            historyEl.querySelectorAll('.history-delete').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (confirm('确定删除这条记录吗？')) {
+                        deleteRecord(btn.dataset.date);
+                        showToast('已删除');
+                        refreshAll();
+                    }
+                });
+            });
+        }
+
+        // ===== Refresh All =====
+        function refreshAll() {
+            refreshCharts();
+            generateReport();
+            refreshHistory();
+        }
+
+        // ===== Init =====
+        refreshAll();
+    </script>
+</body>
+</html>
